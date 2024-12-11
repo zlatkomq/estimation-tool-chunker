@@ -64,8 +64,14 @@ def converter(request: Request) -> ConvertFunc:
             if str(exc).startswith("File format not allowed"):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail={"message": str(exc)},
+                    detail={"message": "File format not allowed"},
                 ) from exc
+            if "No such file or directory" in str(exc):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail={"message": "Document not found"},
+                ) from exc
+
             raise
 
     return convert_func
