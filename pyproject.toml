@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "docling-inference"
+version = "0.1.0"
+description = ""
+authors = ["Oskar Liew <oskar@liew.se>"]
+license = "mit"
+readme = "README.md"
+packages = [{include = "src"}]
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.5.1"
+docling = "^2.10.0"
+fastapi = "^0.115.6"
+uvicorn = "^0.32.1"
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
