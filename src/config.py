@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import multiprocessing
 
@@ -6,32 +5,26 @@ from pydantic_settings import BaseSettings
 
 
 class Config(BaseSettings):
-    num_workers: int | None = None
+    num_workers: int | float | None = None
     log_level: str = "INFO"
     dev_mode: bool = False
+    port: int = 8080
+
+    def get_num_workers(self) -> int | None:
+        if self.num_workers is None:
+            return None
+
+        if self.num_workers == -1:
+            return multiprocessing.cpu_count()
+
+        if 0 < self.num_workers < 1:
+            return int(self.num_workers * multiprocessing.cpu_count())
+
+        return int(self.num_workers)
 
 
-def get_dev_mode() -> bool:
-    return bool(os.getenv("DEV_MODE"))
-
-
-def get_num_workers() -> int | None:
-    n_workers_var = os.getenv("NUM_WORKERS")
-    if n_workers_var is None:
-        return None
-
-    if n_workers_var == "-1":
-        return multiprocessing.cpu_count()
-
-    n_workers = float(n_workers_var)
-    if 0 < n_workers < 1:
-        return int(n_workers * multiprocessing.cpu_count())
-
-    return int(n_workers)
-
-
-def get_log_config():
-    log_file = Path("/logs/docling-inference.log")
+def get_log_config(log_level: str):
+    log_file = Path.cwd() / Path("logs/docling-inference.log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
     return {
         "version": 1,
@@ -65,7 +58,7 @@ def get_log_config():
         "loggers": {
             "": {  # root logger
                 "handlers": ["default", "file"],
-                "level": os.environ.get("LOG_LEVEL", "INFO"),
+                "level": log_level,
             },
             "uvicorn": {
                 "handlers": ["uvicorn"],
@@ -79,6 +72,11 @@ def get_log_config():
             },
             "uvicorn.access": {
                 "handlers": ["uvicorn"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "docling": {
+                "handlers": ["default", "file"],
                 "level": "INFO",
                 "propagate": False,
             },

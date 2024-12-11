@@ -1,13 +1,15 @@
 services:
   docling-inference:
-    build:
-      dockerfile: Dockerfile
+    image: docling-inference:dev
     ports:
       - 8080:8080
     environment:
       - DEV_MODE=1
     volumes:
-      - ./logs:/logs
+      - ./logs:/app/logs
+      - ./src:/app/src:ro
+      - hf_cache:/root/.cache/huggingface
+      - ocr_cache:/root/.EasyOCR
     restart: always
     deploy:
       resources:
@@ -19,3 +21,4 @@ services:
 
 volumes:
   hf_cache:
+  ocr_cache:
