@@ -5,6 +5,7 @@ services:
       - 8080:8080
     environment:
       - DEV_MODE=1
+      - AUTH_TOKEN=dev-key
     volumes:
       - ./logs:/app/logs
       - ./src:/app/src:ro

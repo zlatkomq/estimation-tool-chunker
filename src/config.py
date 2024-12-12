@@ -9,6 +9,7 @@ class Config(BaseSettings):
     log_level: str = "INFO"
     dev_mode: bool = False
     port: int = 8080
+    auth_token: str | None = None
 
     def get_num_workers(self) -> int | None:
         if self.num_workers is None:

@@ -1,7 +1,8 @@
 # Docling inference server
 
-This project provides a FastAPI wrapper around the [docling](https://github.com/DS4SD/docling)
-document parser to make it easier to use in distributed production environments.
+This project provides a FastAPI wrapper around the
+[docling](https://github.com/DS4SD/docling) document parser to make it easier to
+use in distributed production environments.
 
 ## Running
 
@@ -51,8 +52,8 @@ volumes:
 
 ### Local python
 
-Dependencies are handled with [pypoetry](https://python-poetry.org/) in this project.
-Follow their installation instructions if you do not have it.
+Dependencies are handled with [pypoetry](https://python-poetry.org/) in this
+project. Follow their installation instructions if you do not have it.
 
 ```bash
 # Install the dependencies
@@ -71,10 +72,14 @@ Build the project docker image with `docker build -t docling-inference:dev .`
 
 ## Configuration
 
-Configuration is handled through environment variables. Here is a list of the available
-configuration variables. They are defined in `src/config.py`
+Configuration is handled through environment variables. Here is a list of the
+available configuration variables. They are defined in `src/config.py`
 
 - `NUM_WORKERS`: The number of processes to run
-- `LOG_LEVEL`: The lowest level of logs to display. One of DEBUG, INFO, WARNING, CRITICAL, ERROR
+- `LOG_LEVEL`: The lowest level of logs to display. One of DEBUG, INFO, WARNING,
+  CRITICAL, ERROR
 - `DEV_MODE`: Sets automatic reload of the service. Useful during development
 - `PORT`: The port to run the server on
+- `AUTH_TOKEN`: Token to use for authentication. Token is expected in the
+  `Authorization: Bearer: <token>` format in the request header. The service is
+  unprotected if this option is omitted

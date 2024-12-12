@@ -4,25 +4,34 @@ from io import BytesIO
 from typing import AsyncIterator, Callable
 import logging
 
-from docling.datamodel.base_models import InputFormat
+from docling.datamodel.base_models import (
+    ConversionStatus,
+    DoclingComponentType,
+    InputFormat,
+)
 from docling.datamodel.document import ConversionResult
 from docling.document_converter import DocumentConverter
-from docling.exceptions import ConversionError
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.io import DocumentStream
 from fastapi import (
     Depends,
     FastAPI,
     HTTPException,
-    Path as PathParam,
     Request,
     UploadFile,
     status,
 )
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import uvicorn
 
 
-from src.models import OutputFormat, ParseResponse, ParseResponseData
+from src.models import (
+    OutputFormat,
+    ParseFileRequest,
+    ParseResponse,
+    ParseResponseData,
+    ParseUrlRequest,
+)
 from src.config import Config, get_log_config
 
 logger = logging.getLogger(__name__)
@@ -35,14 +44,35 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     converter = DocumentConverter()
     for i, format in enumerate(InputFormat):
         logger.info(f"Initializing {format.value} pipeline {i + 1}/{len(InputFormat)}")
+
         converter.initialize_pipeline(format)
     app.state.converter = converter
+
+    app.state.config = Config()
 
     yield
     # Teardown
 
 
 app = FastAPI(lifespan=lifespan)
+
+bearer_auth = HTTPBearer(auto_error=False)
+
+
+async def authorize_header(
+    request: Request, bearer: HTTPAuthorizationCredentials | None = Depends(bearer_auth)
+):
+    # Do nothing if AUTH_KEY is not set
+    auth_token: str | None = request.app.state.config.auth_token
+    if auth_token is None:
+        return
+
+    # Validate auth bearer
+    if bearer is None or bearer.credentials != auth_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"message": "Unauthorized"},
+        )
 
 
 @app.exception_handler(Exception)
@@ -53,68 +83,87 @@ async def ingestion_error_handler(_, exc: Exception):
     )
 
 
-ConvertFunc = Callable[[str | Path | DocumentStream], ConversionResult]
+ConvertData = str | Path | DocumentStream
+ConvertFunc = Callable[[ConvertData], ConversionResult]
 
 
-def converter(request: Request) -> ConvertFunc:
-    def convert_func(data: str | Path | DocumentStream):
+def convert(request: Request) -> ConvertFunc:
+    def convert_func(data: ConvertData) -> ConversionResult:
         try:
-            return request.app.state.converter.convert(data)
-        except ConversionError as exc:
-            if str(exc).startswith("File format not allowed"):
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail={"message": "File format not allowed"},
-                ) from exc
-            if "No such file or directory" in str(exc):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail={"message": "Document not found"},
-                ) from exc
-
-            raise
+            result = request.app.state.converter.convert(data, raises_on_error=False)
+            _check_conversion_result(result)
+            return result
+        except FileNotFoundError as exc:
+            logger.error(f"File not found error: {str(exc)}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "Input not found"},
+            ) from exc
 
     return convert_func
 
 
-@app.post("/parse/{url}")
+@app.post("/parse/url")
 def parse_document_url(
-    url: str = PathParam(..., description="Download url of document"),
-    format: OutputFormat = OutputFormat.MARKDOWN,
-    converter: ConvertFunc = Depends(converter),
+    payload: ParseUrlRequest,
+    convert: ConvertFunc = Depends(convert),
+    _=Depends(authorize_header),
 ):
-    result = converter(url)
-    output = _convert_document(result.document, format)
+    result = convert(payload.url)
+    output = _get_output(result.document, payload.output_format)
+
+    json_output = result.document.export_to_dict() if payload.include_json else None
 
     return ParseResponse(
         message="Document parsed successfully",
         status="Ok",
-        data=ParseResponseData(output=output),
+        data=ParseResponseData(output=output, json_output=json_output),
     )
 
 
-@app.post("/parse")
+@app.post("/parse/file")
 def parse_document_stream(
     file: UploadFile,
-    format: OutputFormat = OutputFormat.MARKDOWN,
-    converter: ConvertFunc = Depends(converter),
+    convert: ConvertFunc = Depends(convert),
+    payload: ParseFileRequest = Depends(ParseFileRequest.from_form_data),
+    _=Depends(authorize_header),
 ):
     binary_data = file.file.read()
     data = DocumentStream(
         name=file.filename or "unset_name", stream=BytesIO(binary_data)
     )
 
-    result = converter(data)
-    output = _convert_document(result.document, format)
+    result = convert(data)
+    output = _get_output(result.document, payload.output_format)
+
+    json_output = result.document.export_to_dict() if payload.include_json else None
 
     return ParseResponse(
         message="Document parsed successfully",
         status="Ok",
-        data=ParseResponseData(output=output),
+        data=ParseResponseData(output=output, json_output=json_output),
     )
 
 
-def _convert_document(document: DoclingDocument, format: OutputFormat) -> str:
+def _check_conversion_result(result: ConversionResult) -> None:
+    """Raises HTTPException and logs on error"""
+    if result.status in [ConversionStatus.SUCCESS, ConversionStatus.PARTIAL_SUCCESS]:
+        return
+
+    if result.errors:
+        for error in result.errors:
+            if error.component_type == DoclingComponentType.USER_INPUT:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={"message": error.error_message},
+                )
+            logger.error(
+                f"Error in: {error.component_type.name} - {error.error_message}"
+            )
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def _get_output(document: DoclingDocument, format: OutputFormat) -> str:
     if format == OutputFormat.MARKDOWN:
         return document.export_to_markdown()
     if format == OutputFormat.TEXT:
