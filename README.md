@@ -6,7 +6,11 @@ use in distributed production environments.
 
 ## Running
 
-The easiest way to run this project is using docker
+The easiest way to run this project is using docker. There are two image families,
+one for cuda machines and one for cpu:
+
+- Cuda: ghcr.io/aidotse/docling-inference:rev
+- CPU: ghcr.io/aidotse/docling-inference:cpu-rev
 
 ```bash
 # Create volumes to not have to download models every time
@@ -57,7 +61,7 @@ project. Follow their installation instructions if you do not have it.
 
 ```bash
 # Install the dependencies
-poetry install
+poetry install --with=<cuda or cpu>
 
 # Activate the shell
 poetry shell
@@ -68,7 +72,10 @@ python src/main.py
 
 ## Building
 
-Build the project docker image with `docker build -t docling-inference:dev .`
+Build the project docker image with one of the following commands
+
+- Cuda: `docker build -t ghcr.io/aidotse/docling-inference:dev .`
+- CPU: `docker build -f Dockerfile.cpu -t ghcr.io/aidotse/docling-inference:dev .`
 
 ## Configuration
 
