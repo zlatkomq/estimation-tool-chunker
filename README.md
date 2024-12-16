@@ -61,7 +61,11 @@ project. Follow their installation instructions if you do not have it.
 
 ```bash
 # Install the dependencies
-poetry install --with=<cuda or cpu>
+poetry install
+# OR
+poetry install --with cuda -E cuda
+
+
 
 # Activate the shell
 poetry shell

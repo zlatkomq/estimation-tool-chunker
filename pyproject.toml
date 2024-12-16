@@ -5,6 +5,7 @@ description = ""
 authors = ["Oskar Liew <oskar@liew.se>"]
 license = "mit"
 readme = "README.md"
+package-mode = false
 packages = [{include = "src"}]
 
 
@@ -14,23 +15,30 @@ docling = "^2.10.0"
 fastapi = "^0.115.6"
 uvicorn = "^0.32.1"
 python-multipart = "^0.0.19"
+torch = { version = "^2.5", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
+torchvision = { version = "^0.20", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
 
-
-
-[[tool.poetry.source]]
-name = "pytorch_cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
-
-
-[tool.poetry.group.cpu.dependencies]
-torch = {version = "^2.5.1+cpu", source = "pytorch_cpu"}
-torchvision = {version = "^0.20.1+cpu", source = "pytorch_cpu"}
-
+[tool.poetry.group.cuda]
+optional = true
 
 [tool.poetry.group.cuda.dependencies]
-torch = "^2.5.1"
-torchvision = "^0.20.1"
+torch       = { version = "^2.5", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
+torchvision = { version = "^0.20", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
+
+[tool.poetry.extras]
+cpu  = ["torch", "torchvision"]
+cuda = ["torch", "torchvision"]
+
+[[tool.poetry.source]]
+name     = "pytorch-cuda"
+priority = "explicit"
+url      = "https://download.pytorch.org/whl/cu121"
+
+[[tool.poetry.source]]
+name     = "pytorch-cpu"
+priority = "explicit"
+url      = "https://download.pytorch.org/whl/cpu"
+
 
 [build-system]
 requires = ["poetry-core"]

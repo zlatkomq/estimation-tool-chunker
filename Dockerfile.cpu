@@ -6,7 +6,7 @@ RUN pip install --upgrade pip && \
     poetry config virtualenvs.in-project true
 
 COPY pyproject.toml poetry.lock /app/
-RUN poetry install --no-ansi --with=cpu
+RUN poetry install --no-ansi --sync
 
 FROM python:3.11-slim-bookworm
 WORKDIR /app
