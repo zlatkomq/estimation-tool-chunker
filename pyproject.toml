@@ -10,13 +10,27 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-torch = "^2.5.1"
 docling = "^2.10.0"
 fastapi = "^0.115.6"
 uvicorn = "^0.32.1"
 python-multipart = "^0.0.19"
 
 
+
+[[tool.poetry.source]]
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+
+[tool.poetry.group.cpu.dependencies]
+torch = {version = "^2.5.1+cpu", source = "pytorch_cpu"}
+torchvision = {version = "^0.20.1+cpu", source = "pytorch_cpu"}
+
+
+[tool.poetry.group.cuda.dependencies]
+torch = "^2.5.1"
+torchvision = "^0.20.1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -20,7 +20,7 @@ docker run -d \
   -e NUM_WORKERS=8 \
   -v hf_cache:/root/.cache/huggingface \
   -v ocr_cache:/root/.EasyOCR \
-  docling-inference
+  ghcr.io/aidotse/docling-inference:latest
 ```
 
 ### Docker compose
@@ -28,7 +28,7 @@ docker run -d \
 ```yaml
 services:
   docling-inference:
-    image: docling-inference
+    image: ghcr.io/aidotse/docling-inference:latest
     ports:
       - 8080:8080
     environment:
