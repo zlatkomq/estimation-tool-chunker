@@ -61,7 +61,7 @@ bearer_auth = HTTPBearer(auto_error=False)
 
 async def authorize_header(
     request: Request, bearer: HTTPAuthorizationCredentials | None = Depends(bearer_auth)
-):
+) -> None:
     # Do nothing if AUTH_KEY is not set
     auth_token: str | None = request.app.state.config.auth_token
     if auth_token is None:
@@ -76,7 +76,7 @@ async def authorize_header(
 
 
 @app.exception_handler(Exception)
-async def ingestion_error_handler(_, exc: Exception):
+async def ingestion_error_handler(_, exc: Exception) -> None:
     detail = {"message": str(exc)}
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail
@@ -103,12 +103,12 @@ def convert(request: Request) -> ConvertFunc:
     return convert_func
 
 
-@app.post("/parse/url")
+@app.post("/parse/url", response_model=ParseResponse)
 def parse_document_url(
     payload: ParseUrlRequest,
     convert: ConvertFunc = Depends(convert),
     _=Depends(authorize_header),
-):
+) -> ParseResponse:
     result = convert(payload.url)
     output = _get_output(result.document, payload.output_format)
 
@@ -121,13 +121,13 @@ def parse_document_url(
     )
 
 
-@app.post("/parse/file")
+@app.post("/parse/file", response_model=ParseResponse)
 def parse_document_stream(
     file: UploadFile,
     convert: ConvertFunc = Depends(convert),
     payload: ParseFileRequest = Depends(ParseFileRequest.from_form_data),
     _=Depends(authorize_header),
-):
+) -> ParseResponse:
     binary_data = file.file.read()
     data = DocumentStream(
         name=file.filename or "unset_name", stream=BytesIO(binary_data)
