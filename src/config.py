@@ -10,6 +10,7 @@ class Config(BaseSettings):
     dev_mode: bool = False
     port: int = 8080
     auth_token: str | None = None
+    ocr_languages: str = "en,es,fr,de,sv"
 
     def get_num_workers(self) -> int | None:
         if self.num_workers is None:

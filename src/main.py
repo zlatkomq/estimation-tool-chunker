@@ -10,7 +10,8 @@ from docling.datamodel.base_models import (
     InputFormat,
 )
 from docling.datamodel.document import ConversionResult
-from docling.document_converter import DocumentConverter
+from docling.datamodel.pipeline_options import EasyOcrOptions, PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import DoclingDocument
 from docling_core.types.io import DocumentStream
 from fastapi import (
@@ -41,14 +42,25 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Setup and teardown events of the app"""
     # Setup
-    converter = DocumentConverter()
+    config = Config()
+
+    ocr_languages = config.ocr_languages.split(",")
+    converter = DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(
+                pipeline_options=PdfPipelineOptions(
+                    ocr_options=EasyOcrOptions(lang=ocr_languages)
+                )
+            )
+        }
+    )
     for i, format in enumerate(InputFormat):
         logger.info(f"Initializing {format.value} pipeline {i + 1}/{len(InputFormat)}")
 
         converter.initialize_pipeline(format)
-    app.state.converter = converter
 
-    app.state.config = Config()
+    app.state.converter = converter
+    app.state.config = config
 
     yield
     # Teardown

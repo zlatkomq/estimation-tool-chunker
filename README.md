@@ -86,11 +86,14 @@ Build the project docker image with one of the following commands
 Configuration is handled through environment variables. Here is a list of the
 available configuration variables. They are defined in `src/config.py`
 
-- `NUM_WORKERS`: The number of processes to run
+- `NUM_WORKERS`: The number of processes to run.
 - `LOG_LEVEL`: The lowest level of logs to display. One of DEBUG, INFO, WARNING,
-  CRITICAL, ERROR
+  CRITICAL, ERROR.
 - `DEV_MODE`: Sets automatic reload of the service. Useful during development
-- `PORT`: The port to run the server on
+- `PORT`: The port to run the server on.
 - `AUTH_TOKEN`: Token to use for authentication. Token is expected in the
   `Authorization: Bearer: <token>` format in the request header. The service is
-  unprotected if this option is omitted
+  unprotected if this option is omitted.
+- `OCR_LANGUAGES`: List of language codes to use for optical character optimization.
+  Default is `"es,en,fr,de,sv"`. See https://www.jaided.ai/easyocr/ for the list
+  of all available languages.
