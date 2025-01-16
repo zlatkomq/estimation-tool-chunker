@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "**"
+
 
 env:
   IMAGE_ID: ghcr.io/${{ github.repository_owner }}/docling-inference
@@ -29,7 +32,10 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ env.IMAGE_ID }}:latest,${{ env.IMAGE_ID }}:${{ github.sha }}
+        tags: |
+          ${{ env.IMAGE_ID }}:latest
+          ${{ env.IMAGE_ID }}:${{ github.sha }}
+          ${{ env.IMAGE_ID }}:${{ github.ref_name }}
         cache-from: type=registry,ref=${{ env.IMAGE_ID }}:buildcache
         cache-to: type=registry,ref=${{ env.IMAGE_ID }}:buildcache,mode=max
 
@@ -54,6 +60,9 @@ jobs:
         context: .
         push: true
         file: Dockerfile.cpu
-        tags: ${{ env.IMAGE_ID }}:cpu-latest,${{ env.IMAGE_ID }}:cpu-${{ github.sha }}
+        tags: |
+          ${{ env.IMAGE_ID }}:cpu-latest
+          ${{ env.IMAGE_ID }}:cpu-${{ github.sha }}
+          ${{ env.IMAGE_ID }}:cpu-${{ github.ref_name }}
         cache-from: type=registry,ref=${{ env.IMAGE_ID }}:cpu-buildcache
         cache-to: type=registry,ref=${{ env.IMAGE_ID }}:cpu-buildcache,mode=max
