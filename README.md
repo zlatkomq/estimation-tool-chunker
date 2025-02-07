@@ -74,6 +74,44 @@ poetry shell
 python src/main.py
 ```
 
+## Using the API
+
+When the server is started you can find the interactive API documentation at the `/docs`
+endpoint. If you're running locally with the example command, this will be
+`http://localhost:8080/docs`.
+
+There are two main methods to parse documenta that take the data on two different formats.
+You can use the `/parse/url` to parse a document from a download link. You can call it
+like this using `curl` from the command line:
+
+```sh
+curl -X 'POST' \
+  'http://localhost:8080/parse/url' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "include_json": false,
+  "output_format": "markdown",
+  "url": "https://arxiv.org/pdf/2408.09869"
+}'
+```
+
+You can also parse files directly with the `/parse/file` endpoint:
+
+```sh
+curl -X 'POST' \
+  'http://localhost:8080/parse/file' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@file-path.pdf;type=application/pdf' \
+  -F 'data={"include_json":false,"output_format":"markdown"}'
+```
+
+Tip: You can use a service like https://curlconverter.com/ to convert curl commands to
+your favourite http client, e.g. `requests`.
+
+For a full list of available options, please refer to the interactive documentation.
+
 ## Building
 
 Build the project docker image with one of the following commands
