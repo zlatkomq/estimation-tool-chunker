@@ -49,7 +49,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         format_options={
             InputFormat.PDF: PdfFormatOption(
                 pipeline_options=PdfPipelineOptions(
-                    ocr_options=EasyOcrOptions(lang=ocr_languages)
+                    ocr_options=EasyOcrOptions(lang=ocr_languages),
+                    do_code_enrichment=False,
+                    do_formula_enrichment=False,
+                    do_picture_classification=False,
+                    do_picture_description=False,
                 )
             )
         }

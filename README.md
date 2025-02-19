@@ -80,9 +80,9 @@ When the server is started you can find the interactive API documentation at the
 endpoint. If you're running locally with the example command, this will be
 `http://localhost:8080/docs`.
 
-There are two main methods to parse documenta that take the data on two different formats.
-You can use the `/parse/url` to parse a document from a download link. You can call it
-like this using `curl` from the command line:
+There are two main methods to parse documents that take the data on two different formats.
+You can use the `/parse/url` to parse a document from a download link. To call it with
+`curl` from the command line:
 
 ```sh
 curl -X 'POST' \
@@ -135,3 +135,7 @@ available configuration variables. They are defined in `src/config.py`
 - `OCR_LANGUAGES`: List of language codes to use for optical character optimization.
   Default is `"es,en,fr,de,sv"`. See https://www.jaided.ai/easyocr/ for the list
   of all available languages.
+- `DO_CODE_ENRICHMENT`: Use a code enrichment model in the pipeline. Processes images of code to code.
+- `DO_FORMULA_ENRICHMENT`: Use a formula enrichment model in the pipeline. Converts formulas to LaTeX.
+- `DO_PICTURE_CLASSIFICATION`: Use a picture classification model in the pipelinese. Classifies the type of image into a category.
+- `DO_PICTURE_DESCRIPTION`: Use a picture description model in the pipeline. Uses a small multimodal model to describe images.

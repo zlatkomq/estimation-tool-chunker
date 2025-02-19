@@ -11,7 +11,7 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-docling = "^2.10.0"
+docling = "^2.23.0"
 fastapi = "^0.115.6"
 uvicorn = "^0.32.1"
 python-multipart = "^0.0.19"
