@@ -1,45 +1,58 @@
-[tool.poetry]
+[project]
 name = "docling-inference"
-version = "0.1.0"
-description = ""
-authors = ["Oskar Liew <oskar@liew.se>"]
-license = "mit"
+version = "0.2.0"
+description = "Docling inference server"
 readme = "README.md"
-package-mode = false
-packages = [{include = "src"}]
+requires-python = ">=3.11"
+dependencies = [
+    "docling>=2.23.0",
+    "fastapi>=0.115.6",
+    "uvicorn>=0.32.1",
+    "python-multipart>=0.0.19",
+]
 
+[project.optional-dependencies]
+cpu = [
+  "torch>=2.5.0",
+  "torchvision>=0.20.0",
+]
+cu121 = [
+  "torch>=2.5.0",
+  "torchvision>=0.20.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-docling = "^2.23.0"
-fastapi = "^0.115.6"
-uvicorn = "^0.32.1"
-python-multipart = "^0.0.19"
-torch = { version = "^2.5", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
-torchvision = { version = "^0.20", source = "pytorch-cpu", markers = "extra=='cpu' and extra!='cuda'" }
+[tool.uv]
+conflicts = [
+  [
+    { extra = "cpu" },
+    { extra = "cu121" },
+  ],
+]
 
-[tool.poetry.group.cuda]
-optional = true
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu121", extra = "cu121" },
+]
+torchvision = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu121", extra = "cu121" },
+]
 
-[tool.poetry.group.cuda.dependencies]
-torch       = { version = "^2.5", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
-torchvision = { version = "^0.20", source = "pytorch-cuda", markers = "extra=='cuda' and extra!='cpu'" }
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
-[tool.poetry.extras]
-cpu  = ["torch", "torchvision"]
-cuda = ["torch", "torchvision"]
-
-[[tool.poetry.source]]
-name     = "pytorch-cuda"
-priority = "explicit"
-url      = "https://download.pytorch.org/whl/cu121"
-
-[[tool.poetry.source]]
-name     = "pytorch-cpu"
-priority = "explicit"
-url      = "https://download.pytorch.org/whl/cpu"
-
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src"]
+

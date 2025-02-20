@@ -1,12 +1,10 @@
 FROM python:3.11-slim-bookworm AS builder
 WORKDIR /app
 
-RUN pip install --upgrade pip && \
-    pip install poetry && \
-    poetry config virtualenvs.in-project true
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml poetry.lock /app/
-RUN poetry install --no-ansi --sync -E cpu
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --frozen --no-cache --no-install-project --extra cpu
 
 FROM python:3.11-slim-bookworm
 WORKDIR /app

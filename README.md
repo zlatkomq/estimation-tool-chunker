@@ -56,19 +56,20 @@ volumes:
 
 ### Local python
 
-Dependencies are handled with [pypoetry](https://python-poetry.org/) in this
+Dependencies are handled with [uv](https://docs.astral.sh/uv/) in this
 project. Follow their installation instructions if you do not have it.
 
 ```bash
+# Create a virtual environment
+uv venv
+
 # Install the dependencies
-poetry install
-# OR
-poetry install --with cuda -E cuda
-
-
+uv sync --extra cpu
+# OR if you have cuda devices
+uv sync --extra cu121
 
 # Activate the shell
-poetry shell
+source .venv/bin/activate
 
 # Start the server
 python src/main.py
