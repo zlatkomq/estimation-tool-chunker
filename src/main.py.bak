@@ -377,9 +377,6 @@ def merge_chunks_by_section(chunks: List[ChunkData], max_tokens: int, tokenizer=
                 if current_pages or chunk_pages:
                     current_merged_chunk.metadata["pages"] = sorted(list(current_pages.union(chunk_pages)))
                 
-                # Keep the earliest chunk_index from the merged chunks
-                current_merged_chunk.chunk_index = min(current_merged_chunk.chunk_index, chunk.chunk_index)
-                
                 # Add this index to current group
                 current_indices.append(idx)
             else:
@@ -435,7 +432,7 @@ def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, m
     chunks = []
     
     # Process document with HybridChunker
-    for chunk_idx, chunk in enumerate(chunker.chunk(document)):
+    for chunk in chunker.chunk(document):
         # Add contextualization to each chunk
         contextualized_text = chunker.contextualize(chunk)
         
@@ -498,7 +495,6 @@ def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, m
         chunk_data = ChunkData(
             text=prefixed_text,
             section_title=section_title,
-            chunk_index=chunk_idx,
             metadata=metadata
         )
         chunks.append(chunk_data)
@@ -508,10 +504,6 @@ def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, m
         # Use a consistent adapter for the tokenizer
         adapter = TokenizerAdapter.create(tokenizer)
         chunks = merge_chunks_by_section(chunks, max_tokens, adapter)
-        
-        # Re-index the chunks after merging to maintain sequential order
-        for new_idx, chunk in enumerate(chunks):
-            chunk.chunk_index = new_idx
     
     return chunks
 

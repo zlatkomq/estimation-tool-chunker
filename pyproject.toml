@@ -5,7 +5,7 @@ description = "Docling inference server"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "docling>=2.23.0",
+    "docling>=2.31.0",
     "fastapi>=0.115.6",
     "uvicorn>=0.32.1",
     "python-multipart>=0.0.19",
