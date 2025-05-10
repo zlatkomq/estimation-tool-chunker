@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   docling-inference:
-    build: .
     image: docling-inference:latest
     ports:
       - 8877:8080
@@ -10,20 +9,22 @@ services:
       - DEV_MODE=1
       - AUTH_TOKEN=dev-key
       - NUM_WORKERS=12
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+      replicas: 1
+      resources:
+        reservations:
+          generic_resources:
+            - discrete_resource_spec:
+                kind: 'gpu'
+                value: 1
+        limits:
+          memory: 16G
     volumes:
       - app_logs:/app/logs
       - hf_cache:/root/.cache/huggingface
       - ocr_cache:/root/.EasyOCR
-    deploy:
-      replicas: 1
-      resources:
-        limits:
-          memory: 16G
-    runtime: nvidia
 
 volumes:
   app_logs:
   hf_cache:
-  ocr_cache:
+  ocr_cache: 

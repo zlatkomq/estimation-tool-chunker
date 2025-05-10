@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
   docling-inference:
-    build: .
     image: docling-inference:latest
     ports:
       - 8877:8080
@@ -21,9 +20,11 @@ services:
       resources:
         limits:
           memory: 16G
+          cpus: '4'
+    # Legacy GPU access mode for older Docker versions
     runtime: nvidia
 
 volumes:
   app_logs:
   hf_cache:
-  ocr_cache:
+  ocr_cache: 
