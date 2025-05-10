@@ -9,6 +9,7 @@ services:
     environment:
       - DEV_MODE=1
       - AUTH_TOKEN=dev-key
+      - NUM_WORKERS=12
     volumes:
       - ./logs:/app/logs
       - ./src:/app/src:ro
@@ -22,6 +23,8 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+        limits:
+          memory: 16G
 
 volumes:
   hf_cache:
