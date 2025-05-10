@@ -10,6 +10,8 @@ services:
       - DEV_MODE=1
       - AUTH_TOKEN=dev-key
       - NUM_WORKERS=12
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./logs:/app/logs
       - ./src:/app/src:ro
@@ -18,11 +20,6 @@ services:
     deploy:
       replicas: 1
       resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
         limits:
           memory: 16G
 
