@@ -13,8 +13,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src:ro
+      - app_logs:/app/logs
       - hf_cache:/root/.cache/huggingface
       - ocr_cache:/root/.EasyOCR
     deploy:
@@ -24,5 +23,6 @@ services:
           memory: 16G
 
 volumes:
+  app_logs:
   hf_cache:
   ocr_cache:
