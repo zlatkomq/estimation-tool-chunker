@@ -54,6 +54,42 @@ volumes:
   ocr_cache:
 ```
 
+### Local Development with Docker
+
+For local development, you can build the Docker image locally and use a custom port:
+
+```yaml
+services:
+  docling-inference:
+    build: .  # Build from local Dockerfile instead of pulling an image
+    ports:
+      - 8877:8080  # Map to port 8877 on host (useful if 8080 is already in use)
+    environment:
+      - DEV_MODE=1
+      - AUTH_TOKEN=dev-key
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src:ro
+      - hf_cache:/root/.cache/huggingface
+      - ocr_cache:/root/.EasyOCR
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+```
+
+Start the service with:
+
+```bash
+docker-compose up --build
+```
+
+When using the custom port, your API will be available at `http://localhost:8877/docs`.
+
 ### Local python
 
 Dependencies are handled with [uv](https://docs.astral.sh/uv/) in this
