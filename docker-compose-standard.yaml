@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  docling-inference:
+    build: .
+    image: docling-inference:latest
+    ports:
+      - 8877:8080
+    environment:
+      - DEV_MODE=1
+      - AUTH_TOKEN=dev-key
+      - NUM_WORKERS=12
+    volumes:
+      - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
+      - ocr_cache:/root/.EasyOCR
+    # Standard Docker configuration for GPU
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [compute, utility]
+
+volumes:
+  hf_cache:
+  ocr_cache: 
