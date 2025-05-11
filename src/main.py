@@ -6,6 +6,7 @@ import logging
 import tempfile
 import os
 import re
+import time
 
 from docling.datamodel.base_models import (
     ConversionStatus,
@@ -64,9 +65,12 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Setup and teardown events of the app"""
     # Setup
+    logger.info("Starting application initialization")
     config = Config()
+    logger.info(f"Configuration loaded: OCR languages: {config.ocr_languages}, Workers: {config.workers}")
 
     ocr_languages = config.ocr_languages.split(",")
+    logger.info(f"Initializing DocumentConverter with OCR languages: {ocr_languages}")
     converter = DocumentConverter(
         format_options={
             InputFormat.PDF: PdfFormatOption(
@@ -84,6 +88,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Since we only work with PDFs, only initialize the PDF pipeline
     logger.info("Initializing PDF pipeline only")
     converter.initialize_pipeline(InputFormat.PDF)
+    logger.info("PDF pipeline initialization complete")
 
     app.state.converter = converter
     app.state.config = config
@@ -91,16 +96,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Initialize Nomic tokenizer if available
     if TOKENIZER_AVAILABLE:
         try:
+            logger.info("Attempting to load Nomic tokenizer")
             app.state.tokenizer = AutoTokenizer.from_pretrained("nomic-ai/nomic-embed-text-v2-moe")
             logger.info("Nomic tokenizer initialized successfully")
         except Exception as e:
             logger.warning(f"Failed to load Nomic tokenizer: {str(e)}")
             app.state.tokenizer = None
     else:
+        logger.warning("Transformers library not available, Nomic tokenizer will not be used")
         app.state.tokenizer = None
 
+    logger.info("Application initialization complete")
     yield
     # Teardown
+    logger.info("Application shutting down")
 
 
 app = FastAPI(
@@ -117,18 +126,22 @@ async def authorize_header(
     # Do nothing if AUTH_KEY is not set
     auth_token: str | None = request.app.state.config.auth_token
     if auth_token is None:
+        logger.debug("No authentication token configured, skipping authorization")
         return
 
     # Validate auth bearer
     if bearer is None or bearer.credentials != auth_token:
+        logger.warning("Failed authentication attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"message": "Unauthorized"},
         )
+    logger.debug("Authentication successful")
 
 
 @app.exception_handler(Exception)
 async def ingestion_error_handler(_, exc: Exception) -> None:
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     detail = {"message": str(exc)}
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail
@@ -142,7 +155,11 @@ ConvertFunc = Callable[[ConvertData], ConversionResult]
 def convert(request: Request) -> ConvertFunc:
     def convert_func(data: ConvertData) -> ConversionResult:
         try:
+            logger.info("Starting document conversion")
+            start_time = time.time()
             result = request.app.state.converter.convert(data, raises_on_error=False)
+            conversion_time = time.time() - start_time
+            logger.info(f"Document conversion completed in {conversion_time:.2f} seconds")
             _check_conversion_result(result)
             return result
         except FileNotFoundError as exc:
@@ -157,7 +174,9 @@ def convert(request: Request) -> ConvertFunc:
 
 def get_heading_path(headings):
     """Get the full heading path as a breadcrumb"""
-    return " > ".join(headings) if headings else None
+    path = " > ".join(headings) if headings else None
+    logger.debug(f"Extracted heading path: {path}")
+    return path
 
 def get_content_type(chunk):
     """Determine content type based on doc items"""
@@ -168,20 +187,27 @@ def get_content_type(chunk):
                 types.add(item.label)
     
     if "table" in types:
-        return "table"
+        content_type = "table"
     elif "list_item" in types:
-        return "list"
+        content_type = "list"
     elif "section_header" in types:
-        return "heading"
-    return "text"
+        content_type = "heading"
+    else:
+        content_type = "text"
+    
+    logger.debug(f"Determined content type '{content_type}' from types: {types}")
+    return content_type
 
 def get_page_range(pages):
     """Format page range nicely"""
     if not pages:
         return None
     if len(pages) == 1:
-        return f"Page {pages[0]}"
-    return f"Pages {min(pages)}-{max(pages)}"
+        result = f"Page {pages[0]}"
+    else:
+        result = f"Pages {min(pages)}-{max(pages)}"
+    logger.debug(f"Page range determined: {result} from pages: {pages}")
+    return result
 
 def extract_table_data(chunk):
     """Extract structured table data if present"""
@@ -200,6 +226,8 @@ def extract_table_data(chunk):
                 if rows:
                     table_data.append(" | ".join(rows))
     
+    if table_data:
+        logger.debug(f"Extracted table data with {len(table_data)} rows")
     return table_data if table_data else None
 
 def get_list_info(chunk):
@@ -219,6 +247,8 @@ def get_list_info(chunk):
                 "text": text
             })
     
+    if list_items:
+        logger.debug(f"Extracted list information with {len(list_items)} items")
     return list_items if list_items else None
 
 def get_document_summary(document):
@@ -231,6 +261,8 @@ def get_document_summary(document):
     if hasattr(document, "pages"):
         summary["total_pages"] = len(document.pages)
     
+    if summary:
+        logger.debug(f"Document summary: {summary}")
     return summary if summary else None
 
 def extract_captions(chunk):
@@ -247,17 +279,9 @@ def extract_captions(chunk):
         if hasattr(item, "label") and item.label == "table":
             if hasattr(item, "captions") and item.captions:
                 captions.extend(item.captions)
-        
-        # Get captions from pictures
-        if hasattr(item, "label") and item.label == "picture":
-            if hasattr(item, "captions") and item.captions:
-                captions.extend(item.captions)
-                
-        # Get captions from figures
-        if hasattr(item, "label") and item.label == "figure":
-            if hasattr(item, "captions") and item.captions:
-                captions.extend(item.captions)
     
+    if captions:
+        logger.debug(f"Extracted {len(captions)} captions: {captions}")
     return captions
 
 class TokenizerAdapter:
@@ -305,18 +329,10 @@ class TokenizerAdapter:
 
 
 def merge_chunks_by_section(chunks: List[ChunkData], max_tokens: int, tokenizer=None) -> List[ChunkData]:
-    """
-    Post-process chunks to merge those with identical section titles that don't exceed token limits.
-    This function prioritizes semantic continuity over page boundaries.
+    """Merge chunks that have the same section title, respecting token limit."""
+    logger.info(f"Merging chunks by section (max tokens: {max_tokens})")
+    start_time = time.time()
     
-    Args:
-        chunks: List of chunk data
-        max_tokens: Maximum tokens per chunk
-        tokenizer: Optional tokenizer or TokenizerAdapter for counting tokens
-        
-    Returns:
-        List of merged chunks
-    """
     if not chunks:
         return []
     
@@ -421,16 +437,22 @@ def merge_chunks_by_section(chunks: List[ChunkData], max_tokens: int, tokenizer=
     # Sort by the earliest position the section appears in the original document
     merged_chunks.sort(key=lambda chunk: section_min_indices.get(chunk.section_title or "", len(chunks)))
     
+    merge_time = time.time() - start_time
+    logger.info(f"Chunk merging completed in {merge_time:.2f} seconds. Reduced from {len(chunks)} to {len(merged_chunks)} chunks")
     return merged_chunks
 
 def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, merge_sections=True) -> List[ChunkData]:
-    """Process document with HybridChunker and return chunks optimized for embedding"""
-    if tokenizer is not None:
-        # Use provided tokenizer (HybridChunker handles different tokenizer types internally)
-        chunker = HybridChunker(tokenizer=tokenizer, max_tokens=max_tokens, merge_peers=True)
-    else:
-        # Fallback to default tokenizer
-        chunker = HybridChunker(max_tokens=max_tokens, merge_peers=True)
+    """Process document into semantic chunks with metadata."""
+    logger.info(f"Chunking document, max_tokens={max_tokens}, merge_sections={merge_sections}")
+    start_time = time.time()
+    
+    # Initialize tokenizer adapter
+    token_counter = TokenizerAdapter.create(tokenizer)
+    logger.debug(f"Using tokenizer: {token_counter.__class__.__name__}")
+    
+    # Initialize chunker
+    chunker = HybridChunker(max_tokens=max_tokens, tokenizer=token_counter)
+    logger.debug("Hybrid chunker initialized")
     
     chunks = []
     
@@ -503,39 +525,28 @@ def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, m
         )
         chunks.append(chunk_data)
     
-    # Perform section-based merging if requested
+    # Apply section merging if requested
     if merge_sections:
-        # Use a consistent adapter for the tokenizer
-        adapter = TokenizerAdapter.create(tokenizer)
-        chunks = merge_chunks_by_section(chunks, max_tokens, adapter)
-        
-        # Re-index the chunks after merging to maintain sequential order
-        for new_idx, chunk in enumerate(chunks):
-            chunk.chunk_index = new_idx
+        logger.info("Applying section merging to chunks")
+        chunks = merge_chunks_by_section(chunks, max_tokens, tokenizer)
     
+    # Add sequential indices to chunks
+    for i, chunk in enumerate(chunks):
+        chunk.chunk_index = i
+    
+    chunking_time = time.time() - start_time
+    logger.info(f"Document chunking completed in {chunking_time:.2f} seconds. Generated {len(chunks)} chunks")
     return chunks
 
 
 def optimize_pdf(binary_data: bytes) -> bytes:
-    """
-    Pre-process PDF to optimize it for better text extraction
-    
-    This function:
-    1. Removes watermarks and background images
-    2. Optimizes for text extraction
-    3. Repairs structural issues when possible
-    4. Normalizes font encoding
-    5. Compresses and optimizes the PDF
-    
-    Args:
-        binary_data: Raw PDF binary data
-        
-    Returns:
-        Optimized PDF binary data
-    """
+    """Optimize PDF for better text extraction."""
     if not PDF_OPTIMIZATION_AVAILABLE:
         logger.warning("PDF optimization requested but pikepdf is not available. Using original PDF.")
         return binary_data
+    
+    logger.info("Starting PDF optimization")
+    start_time = time.time()
     
     try:
         # Create a temporary file to work with the PDF
@@ -573,6 +584,9 @@ def optimize_pdf(binary_data: bytes) -> bytes:
     except Exception as e:
         logger.error(f"Error during PDF optimization: {str(e)}. Using original PDF.")
         return binary_data
+    finally:
+        optimization_time = time.time() - start_time
+        logger.info(f"PDF optimization completed in {optimization_time:.2f} seconds")
 
 
 @app.post("/parse/file", response_model=ParseResponse)
@@ -584,60 +598,81 @@ def parse_document_stream(
     _=Depends(authorize_header),
 ) -> ParseResponse:
     # Validate that the file is a PDF
-    if not file.filename.lower().endswith('.pdf'):
+    if file.content_type != "application/pdf":
+        logger.warning(f"Unsupported file type: {file.content_type}. Only PDFs are accepted.")
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={"message": "Only PDF files are supported"},
         )
     
-    # Read the original binary data
+    logger.info(f"Processing file: {file.filename}, size: {file.size} bytes")
+    logger.debug(f"Request parameters: {payload.dict()}")
+    
+    # Read the file content
     binary_data = file.file.read()
+    logger.debug(f"File read completed, size: {len(binary_data)} bytes")
     
-    # Apply PDF optimization if requested
+    # Optimize PDF if requested
     if payload.optimize_pdf:
-        optimized_binary_data = optimize_pdf(binary_data)
-    else:
-        optimized_binary_data = binary_data
+        logger.info("PDF optimization requested")
+        try:
+            binary_data = optimize_pdf(binary_data)
+            logger.info("PDF successfully optimized")
+        except Exception as e:
+            logger.error(f"PDF optimization failed: {str(e)}", exc_info=True)
+            logger.info("Proceeding with original PDF")
     
-    # Create DocumentStream from the optimized data
-    data = DocumentStream(
-        name=file.filename or "unset_name", stream=BytesIO(optimized_binary_data)
-    )
-
-    result = convert(data)
+    # Create temporary file for processing
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(binary_data)
+        tmp_path = Path(tmp.name)
     
-    # Process with HybridChunker if requested
-    if payload.chunk_document:
-        # Get tokenizer if available (for optimal chunk size calculation)
-        tokenizer = request.app.state.tokenizer if request and hasattr(request.app.state, "tokenizer") else None
+    logger.debug(f"Temporary file created at {tmp_path}")
+    
+    try:
+        # Process the document
+        start_time = time.time()
+        result = convert(tmp_path)
+        document = result.document
+        logger.info(f"Document converted successfully in {time.time() - start_time:.2f} seconds")
         
-        # Process document with chunker and get chunks optimized for later embedding
-        chunks = chunk_document(result.document, payload.max_tokens_per_chunk, tokenizer, payload.merge_sections)
-        
-        # Create response without json_output field unless specifically requested
-        response_data = {"chunks": chunks}
-        if payload.include_json:
-            response_data["json_output"] = result.document.export_to_dict()
-        
-        return ParseResponse(
-            message="Document chunked successfully",
-            status="Ok",
-            data=ChunkResponseData(**response_data),
-        )
-    else:
-        # Original flow returning text output
-    output = _get_output(result.document, payload.output_format)
-
-        # Create response without json_output field unless specifically requested
-        response_data = {"output": output}
-        if payload.include_json:
-            response_data["json_output"] = result.document.export_to_dict()
-
-    return ParseResponse(
-        message="Document parsed successfully",
-        status="Ok",
-            data=ParseResponseData(**response_data),
-    )
+        # Process according to request parameters
+        if payload.chunk_document:
+            logger.info("Processing document with HybridChunker")
+            chunks = chunk_document(
+                document,
+                payload.max_tokens_per_chunk,
+                request.app.state.tokenizer if request and hasattr(request.app.state, "tokenizer") else None,
+                payload.merge_sections
+            )
+            
+            # Create response
+            response_data = ChunkResponseData(chunks=chunks)
+            logger.info(f"Returning {len(chunks)} chunks")
+            return ParseResponse(data=response_data)
+        else:
+            # Return document in requested format
+            logger.info(f"Converting document to {payload.output_format} format")
+            output_text = _get_output(document, payload.output_format)
+            
+            # Create response
+            response_data = ParseResponseData(
+                document=output_text,
+                json=document.to_dict() if payload.include_json else None,
+            )
+            logger.info(f"Returning document with {len(output_text)} characters")
+            return ParseResponse(data=response_data)
+    except Exception as e:
+        logger.error(f"Error processing document: {str(e)}", exc_info=True)
+        raise
+    finally:
+        # Clean up temporary file
+        try:
+            if tmp_path.exists():
+                os.unlink(tmp_path)
+                logger.debug(f"Temporary file {tmp_path} deleted")
+        except Exception as e:
+            logger.warning(f"Failed to delete temporary file {tmp_path}: {str(e)}")
 
 
 def _check_conversion_result(result: ConversionResult) -> None:
