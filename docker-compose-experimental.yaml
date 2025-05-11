@@ -19,6 +19,7 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=DEBUG  # Set to maximum verbosity
       - DOCLING_LOG_LEVEL=DEBUG  # Set docling package to debug level
+      - DOCLING_PRELOAD_MODELS=true
     init: true
     deploy:
       resources:
