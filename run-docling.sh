@@ -14,5 +14,5 @@ docker volume create ocr_cache
 docker-compose -f docker-compose-regular.yaml up -d
 
 echo "Docling inference service started!"
-echo "API is available at: http://localhost:8877/docs"
+echo "API is available at: http://localhost:8878/docs"
 echo "To view logs: docker-compose -f docker-compose-regular.yaml logs -f" 
