@@ -1,5 +1,6 @@
 from pathlib import Path
 import multiprocessing
+import os
 
 from pydantic_settings import BaseSettings
 
@@ -32,6 +33,10 @@ class Config(BaseSettings):
 def get_log_config(log_level: str):
     log_file = Path.cwd() / Path("logs/docling-inference.log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Force docling to use the same log level if DOCLING_LOG_LEVEL is set
+    docling_log_level = os.environ.get("DOCLING_LOG_LEVEL", log_level)
+    
     return {
         "version": 1,
         "disable_existing_loggers": False,
@@ -39,18 +44,21 @@ def get_log_config(log_level: str):
             "default": {
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             },
+            "detailed": {
+                "format": "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+            },
             "uvicorn": {
                 "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
             },
         },
         "handlers": {
             "default": {
-                "formatter": "default",
+                "formatter": "detailed",
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
             },
             "file": {
-                "formatter": "default",
+                "formatter": "detailed",
                 "class": "logging.FileHandler",
                 "filename": str(log_file),
                 "mode": "a",
@@ -67,12 +75,12 @@ def get_log_config(log_level: str):
                 "level": log_level,
             },
             "uvicorn": {
-                "handlers": ["uvicorn"],
+                "handlers": ["uvicorn", "file"],
                 "level": log_level,  # Use the same log level as the main app
                 "propagate": False,
             },
             "uvicorn.error": {
-                "handlers": ["uvicorn"],
+                "handlers": ["uvicorn", "file"],
                 "level": log_level,  # Use the same log level as the main app
                 "propagate": False,
             },
@@ -88,7 +96,17 @@ def get_log_config(log_level: str):
             },
             "docling": {
                 "handlers": ["default", "file"],
-                "level": log_level,  # Use the same log level as the main app
+                "level": docling_log_level,  # Use the same log level as the main app
+                "propagate": False,
+            },
+            "easyocr": {
+                "handlers": ["default", "file"],
+                "level": docling_log_level,
+                "propagate": False,
+            },
+            "transformers": {
+                "handlers": ["default", "file"],
+                "level": docling_log_level,
                 "propagate": False,
             },
         },

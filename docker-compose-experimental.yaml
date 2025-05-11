@@ -9,16 +9,18 @@ services:
     environment:
       - DEV_MODE=0
       - AUTH_TOKEN=dev-key
-      - NUM_WORKERS=4
+      - NUM_WORKERS=4  # Optimal for RTX 4090
       - DOCLING_OCR_ENGINE=tesseract
       - DOCLING_DISABLE_EASYOCR=1
       - TESSERACT_DEVICE=cuda
       - DOCLING_TABLE_EXTRACTION_MODE=tableformer
       - DOCLING_USE_FP16=true
-      - BATCH_SIZE=16
+      - BATCH_SIZE=32
       - TORCH_CUDA_ARCH_LIST=8.9
       - NVIDIA_VISIBLE_DEVICES=all
       - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG  # Set to maximum verbosity
+      - DOCLING_LOG_LEVEL=DEBUG  # Set docling package to debug level
     deploy:
       resources:
         reservations:
@@ -44,6 +46,13 @@ services:
       bash -c "mkdir -p /root/.EasyOCR/model &&
               chmod -R 777 /root/.EasyOCR &&
               /app/.venv/bin/python -m src.main"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+        mode: "non-blocking"
+        tag: "{{.Name}}"
 
 volumes:
   hf_cache:
