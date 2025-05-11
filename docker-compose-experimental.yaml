@@ -10,7 +10,7 @@ services:
       - DEV_MODE=0
       - AUTH_TOKEN=dev-key
       - NUM_WORKERS=4
-      - DOCLING_OCR_ENGINE=aws_textract
+      - DOCLING_OCR_ENGINE=tesseract
       - TESSERACT_DEVICE=cuda
       - DOCLING_TABLE_EXTRACTION_MODE=tableformer
       - DOCLING_USE_FP16=true
