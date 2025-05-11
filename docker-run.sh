@@ -15,7 +15,7 @@ docker run -d \
   --name docling-inference \
   --gpus all \
   -p 8877:8080 \
-  -e DEV_MODE=1 \
+  -e DEV_MODE=0 \
   -e AUTH_TOKEN=dev-key \
   -e NUM_WORKERS=12 \
   -v $(pwd)/logs:/app/logs \
