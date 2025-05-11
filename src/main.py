@@ -626,18 +626,18 @@ def parse_document_stream(
         )
     else:
         # Original flow returning text output
-        output = _get_output(result.document, payload.output_format)
+    output = _get_output(result.document, payload.output_format)
 
         # Create response without json_output field unless specifically requested
         response_data = {"output": output}
         if payload.include_json:
             response_data["json_output"] = result.document.export_to_dict()
 
-        return ParseResponse(
-            message="Document parsed successfully",
-            status="Ok",
+    return ParseResponse(
+        message="Document parsed successfully",
+        status="Ok",
             data=ParseResponseData(**response_data),
-        )
+    )
 
 
 def _check_conversion_result(result: ConversionResult) -> None:

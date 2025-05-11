@@ -28,3 +28,14 @@ services:
 volumes:
   hf_cache:
   ocr_cache: 
+
+  services:
+  docling-inference:
+    # ... other settings ...
+    deploy:  # Remove this entire block
+    device_requests:
+      - count: all
+        capabilities: ["gpu"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all  # Explicitly expose all GPUs
+      - CUDA_VISIBLE_DEVICES=0       # Use specific GPU if needed
