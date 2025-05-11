@@ -3,22 +3,24 @@ version: '3.8'
 services:
   docling-inference:
     build: .
+    image: docling-inference:latest
     ports:
       - 8877:8080
-    device_requests:
-      - count: all
-        capabilities: ["gpu"]
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - CUDA_VISIBLE_DEVICES=0
-      - NUM_WORKERS=2
-      - BATCH_SIZE=16
+      - DEV_MODE=0
+      - AUTH_TOKEN=dev-key
+      - NUM_WORKERS=4  # Optimal for RTX 4090
       - DOCLING_OCR_ENGINE=aws_textract
-      - DOCLING_TABLE_EXTRACTION_MODE=tableformer
-      - TORCH_CUDA_ARCH_LIST=8.9
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     volumes:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
 
 volumes:
-  hf_cache: 
+  hf_cache:
