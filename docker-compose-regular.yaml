@@ -33,11 +33,6 @@ services:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
       - ocr_cache:/root/.EasyOCR
-    healthcheck:
-      test: ["CMD-SHELL", "nvidia-smi && python /app/check_gpu.py"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     command: >
       bash -c "mkdir -p /root/.EasyOCR/model &&
               chmod -R 777 /root/.EasyOCR &&
