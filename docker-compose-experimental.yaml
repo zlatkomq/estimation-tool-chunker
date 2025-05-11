@@ -9,14 +9,15 @@ services:
     environment:
       - DEV_MODE=0
       - AUTH_TOKEN=dev-key
-      - NUM_WORKERS=2
-      - DOCLING_OCR_ENGINE=tesseract
+      - NUM_WORKERS=4
+      - DOCLING_OCR_ENGINE=aws_textract
       - TESSERACT_DEVICE=cuda
       - DOCLING_TABLE_EXTRACTION_MODE=tableformer
       - DOCLING_USE_FP16=true
       - BATCH_SIZE=16
       - TORCH_CUDA_ARCH_LIST=8.9
       - NVIDIA_VISIBLE_DEVICES=all
+      - PYTHONUNBUFFERED=1
     deploy:
       resources:
         reservations:

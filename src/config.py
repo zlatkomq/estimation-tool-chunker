@@ -68,22 +68,27 @@ def get_log_config(log_level: str):
             },
             "uvicorn": {
                 "handlers": ["uvicorn"],
-                "level": "INFO",
+                "level": log_level,  # Use the same log level as the main app
                 "propagate": False,
             },
             "uvicorn.error": {
                 "handlers": ["uvicorn"],
-                "level": "INFO",
+                "level": log_level,  # Use the same log level as the main app
                 "propagate": False,
             },
             "uvicorn.access": {
-                "handlers": ["uvicorn"],
-                "level": "INFO",
+                "handlers": ["uvicorn", "file"],  # Add file handler for access logs
+                "level": log_level,  # Use the same log level as the main app
+                "propagate": False,
+            },
+            "src": {  # Our app module logger
+                "handlers": ["default", "file"],
+                "level": log_level,
                 "propagate": False,
             },
             "docling": {
                 "handlers": ["default", "file"],
-                "level": "INFO",
+                "level": log_level,  # Use the same log level as the main app
                 "propagate": False,
             },
         },

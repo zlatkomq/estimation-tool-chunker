@@ -10,6 +10,7 @@ services:
       - DEV_MODE=0
       - AUTH_TOKEN=dev-key
       - NUM_WORKERS=12
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from typing import AsyncIterator, Callable, List, Dict, Any, Tuple, Union, Optional
 import logging
+import logging.config
 import tempfile
 import os
 import re
@@ -734,11 +735,26 @@ async def exclude_nulls_middleware(request: Request, call_next):
 
 if __name__ == "__main__":
     config = Config()
+    # Always set log level explicitly to ensure logs are visible in all modes
+    log_level = config.log_level
+    if log_level == "INFO" and not config.dev_mode:
+        # Ensure we see important logs in production mode
+        log_level = "INFO"
+    
+    # Ensure Python output is not buffered which can hide logs in Docker
+    if os.environ.get("PYTHONUNBUFFERED", "0") != "1":
+        os.environ["PYTHONUNBUFFERED"] = "1"
+        logger.warning("PYTHONUNBUFFERED was not set. Setting it to 1 to ensure logs are visible.")
+    
+    # Initialize logging before app starts
+    logging.config.dictConfig(get_log_config(log_level))
+    logger.info(f"Starting application with LOG_LEVEL={log_level}, DEV_MODE={config.dev_mode}, WORKERS={config.get_num_workers()}")
+    
     uvicorn.run(
         "src.main:app",
         host="0.0.0.0",
         port=config.port,
-        log_config=get_log_config(config.log_level),
+        log_config=get_log_config(log_level),
         reload=config.dev_mode,
         workers=config.get_num_workers(),
     )
