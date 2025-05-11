@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  docling-inference:
+    build: .
+    ports:
+      - 8877:8080
+    device_requests:
+      - count: all
+        capabilities: ["gpu"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - NUM_WORKERS=2
+      - BATCH_SIZE=16
+      - DOCLING_OCR_ENGINE=aws_textract
+      - DOCLING_TABLE_EXTRACTION_MODE=tableformer
+      - TORCH_CUDA_ARCH_LIST=8.9
+    volumes:
+      - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
+
+volumes:
+  hf_cache: 
