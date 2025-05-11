@@ -9,8 +9,14 @@ services:
     environment:
       - DEV_MODE=0
       - AUTH_TOKEN=dev-key
-      - NUM_WORKERS=4  # Optimal for RTX 4090
-      - DOCLING_OCR_ENGINE=aws_textract
+      - NUM_WORKERS=2
+      - DOCLING_OCR_ENGINE=tesseract
+      - TESSERACT_DEVICE=cuda
+      - DOCLING_TABLE_EXTRACTION_MODE=tableformer
+      - DOCLING_USE_FP16=true
+      - BATCH_SIZE=16
+      - TORCH_CUDA_ARCH_LIST=8.9
+      - NVIDIA_VISIBLE_DEVICES=all
     deploy:
       resources:
         reservations:
@@ -21,6 +27,11 @@ services:
     volumes:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "nvidia-smi && python /app/check_gpu.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   hf_cache:
