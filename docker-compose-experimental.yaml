@@ -21,6 +21,7 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=DEBUG  # Set to maximum verbosity
       - DOCLING_LOG_LEVEL=DEBUG  # Set docling package to debug level
+    init: true
     deploy:
       resources:
         reservations:
@@ -32,7 +33,6 @@ services:
         condition: on-failure
         max_attempts: 5
         delay: 5s
-      init: true
     volumes:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
