@@ -22,17 +22,13 @@ services:
       - LOG_LEVEL=DEBUG  # Set to maximum verbosity
       - DOCLING_LOG_LEVEL=DEBUG  # Set docling package to debug level
     init: true
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-      restart_policy:
-        condition: on-failure
-        max_attempts: 5
-        delay: 5s
+    restart: on-failure:5
+    # Standard Docker Compose GPU access
+    runtime: nvidia
+    # Alternative GPU access configuration
+    # device_requests:
+    #   - count: 1
+    #     capabilities: [gpu]
     volumes:
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
@@ -56,4 +52,4 @@ services:
 
 volumes:
   hf_cache:
-  ocr_cache:
+  ocr_cache: 
