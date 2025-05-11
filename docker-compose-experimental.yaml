@@ -11,6 +11,7 @@ services:
       - AUTH_TOKEN=dev-key
       - NUM_WORKERS=4
       - DOCLING_OCR_ENGINE=tesseract
+      - DOCLING_DISABLE_EASYOCR=1
       - TESSERACT_DEVICE=cuda
       - DOCLING_TABLE_EXTRACTION_MODE=tableformer
       - DOCLING_USE_FP16=true
