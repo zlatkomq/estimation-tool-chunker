@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                     do_code_enrichment=False,
                     do_formula_enrichment=False,
                     do_picture_classification=False,
-                    do_picture_description=False,
+                    do_picture_description=False
                 )
             )
         }

@@ -11,7 +11,7 @@ services:
       - DOCLING_OCR_ENGINE=tesseract
       - DOCLING_DISABLE_EASYOCR=1
       - TESSERACT_DEVICE=cuda
-      - DOCLING_TABLE_EXTRACTION_MODE=tableformer
+      - DOCLING_TABLE_EXTRACTION_MODE=fast
       - DOCLING_USE_FP16=true
       - BATCH_SIZE=32
       - TORCH_CUDA_ARCH_LIST=8.9
