@@ -1,4 +1,5 @@
 #!/bin/bash
+# Script to run docling-inference directly with Docker run
 
 # Build the image if needed
 docker build -t docling-inference:latest .
@@ -23,5 +24,5 @@ docker run -d \
   -v ocr_cache:/root/.EasyOCR \
   docling-inference:latest
 
-echo "Container started. API available at http://localhost:8877"
+echo "Container started. API available at http://localhost:8877/docs"
 echo "To check logs: docker logs -f docling-inference" 

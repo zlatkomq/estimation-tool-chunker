@@ -17,8 +17,9 @@ cpu = [
   "torchvision>=0.20.0",
 ]
 cu121 = [
-  "torch>=2.5.0",
-  "torchvision>=0.20.0",
+  "torch>=2.5.0+cu121",
+  "torchvision>=0.20.0+cu121",
+  "pytorch-cuda==12.1",
 ]
 
 [tool.uv]

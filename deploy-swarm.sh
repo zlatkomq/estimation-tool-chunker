@@ -12,10 +12,10 @@ docker volume create ocr_cache
 # Check if stack already exists
 if docker stack ls | grep -q "${STACK_NAME}"; then
   echo "Updating existing stack: ${STACK_NAME}"
-  docker stack deploy -c docker-compose-experimental.yaml ${STACK_NAME}
+  docker stack deploy -c docker-compose-regular.yaml ${STACK_NAME}
 else
   echo "Creating new stack: ${STACK_NAME}"
-  docker stack deploy -c docker-compose-experimental.yaml ${STACK_NAME}
+  docker stack deploy -c docker-compose-regular.yaml ${STACK_NAME}
 fi
 
 echo "Deployment initiated!"

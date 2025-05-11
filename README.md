@@ -29,66 +29,26 @@ docker run -d \
 
 ### Docker compose
 
-```yaml
-services:
-  docling-inference:
-    image: ghcr.io/aidotse/docling-inference:latest
-    ports:
-      - 8080:8080
-    environment:
-      - NUM_WORKERS=8
-    volumes:
-      - hf_cache:/root/.cache/huggingface
-      - ocr_cache:/root/.EasyOCR
-    restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-volumes:
-  hf_cache:
-  ocr_cache:
-```
-
-### Local Development with Docker
-
-For local development, you can build the Docker image locally and use a custom port:
-
-```yaml
-services:
-  docling-inference:
-    build: .  # Build from local Dockerfile instead of pulling an image
-    ports:
-      - 8877:8080  # Map to port 8877 on host (useful if 8080 is already in use)
-    environment:
-      - DEV_MODE=1
-      - AUTH_TOKEN=dev-key
-    volumes:
-      - ./logs:/app/logs
-      - ./src:/app/src:ro
-      - hf_cache:/root/.cache/huggingface
-      - ocr_cache:/root/.EasyOCR
-    restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-```
-
-Start the service with:
+We provide a simple Docker Compose configuration in `docker-compose-regular.yaml` for easy deployment:
 
 ```bash
-docker-compose up --build
+# Build and start the service
+docker-compose -f docker-compose-regular.yaml up -d
 ```
 
-When using the custom port, your API will be available at `http://localhost:8877/docs`.
+The API will be available at http://localhost:8878/docs.
+
+For Docker Swarm deployment, use:
+
+```bash
+./deploy-swarm.sh
+```
+
+For direct Docker run without Compose:
+
+```bash
+./docker-run.sh
+```
 
 ### Local python
 
@@ -303,7 +263,7 @@ Common errors and their solutions:
    ```
    Token indices sequence length is longer than the specified maximum sequence length for this model (514 > 512)
    ```
-   Solution: Increase `max_tokens_per_chunk` value
+   Solution: Increase `max_tokens_per_chunk` value. Note that while Nomic tokenizer supports up to 8192 tokens, some internal components may have a 512 token limit.
 
 2. **PDF optimization failure:**
    ```
@@ -311,12 +271,20 @@ Common errors and their solutions:
    ```
    Solution: Install pikepdf (`uv pip install pikepdf`)
 
+3. **GPU performance appears no better than CPU:**
+   This can happen when the bottleneck is in PDF parsing or text extraction, not the OCR process. Try running with `LOG_LEVEL=DEBUG` to identify bottlenecks in the processing pipeline.
+
 ## Building
 
-Build the project docker image with one of the following commands
+Build the project docker image with one of the following commands:
 
-- Cuda: `docker build -t ghcr.io/aidotse/docling-inference:dev .`
-- CPU: `docker build -f Dockerfile.cpu -t ghcr.io/aidotse/docling-inference:dev .`
+```bash
+# For CUDA-enabled build
+docker build -t docling-inference:latest .
+
+# For CPU-only build
+docker build -f Dockerfile.cpu -t docling-inference:cpu .
+```
 
 ## Configuration
 
