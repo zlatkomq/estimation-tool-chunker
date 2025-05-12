@@ -1,8 +1,19 @@
-# Docling inference server
+# Docling inference server - Enhanced Document Chunking
+
+[GitHub Repository](https://github.com/zlatkomq/estimation-tool-chunker)
 
 This project provides a FastAPI wrapper around the
 [docling](https://github.com/DS4SD/docling) document parser to make it easier to
-use in distributed production environments. This implementation specifically focuses on PDF processing.
+use in distributed production environments. This implementation specifically focuses on PDF processing with enhanced document chunking for estimation tools.
+
+## Getting Started
+
+Clone this repository:
+
+```bash
+git clone https://github.com/zlatkomq/estimation-tool-chunker.git
+cd estimation-tool-chunker
+```
 
 ## Running
 
