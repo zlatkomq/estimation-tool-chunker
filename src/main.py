@@ -447,13 +447,13 @@ def chunk_document(document: DoclingDocument, max_tokens: int, tokenizer=None, m
     logger.info(f"Chunking document, max_tokens={max_tokens}, merge_sections={merge_sections}")
     start_time = time.time()
     
-    # Initialize tokenizer adapter
+    # Initialize tokenizer adapter for merge function only
     token_counter = TokenizerAdapter.create(tokenizer)
-    logger.debug(f"Using tokenizer: {token_counter.__class__.__name__}")
+    logger.debug(f"Using tokenizer for merge: {token_counter.__class__.__name__}")
     
-    # Initialize chunker
-    chunker = HybridChunker(max_tokens=max_tokens, tokenizer=token_counter)
-    logger.debug("Hybrid chunker initialized")
+    # Initialize chunker with default tokenizer (HybridChunker has its own built-in tokenizer)
+    chunker = HybridChunker(max_tokens=max_tokens)
+    logger.debug("Hybrid chunker initialized with default tokenizer")
     
     chunks = []
     
