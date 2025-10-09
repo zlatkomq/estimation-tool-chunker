@@ -13,14 +13,15 @@ RUN uv pip install pikepdf
 FROM nvidia/cuda:12.3.1-base-ubuntu22.04
 WORKDIR /app
 
-# Install essential GPU dependencies
+# Install Python and essential dependencies
 RUN apt-get update && apt-get install -y \
-    ocl-icd-opencl-dev \
-    libgl1 \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update && apt-get install -y \
     python3.11 \
     python3.11-distutils \
-    nvidia-utils-535 \
-    cuda-12-3 \
+    ocl-icd-opencl-dev \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy from builder
