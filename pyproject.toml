@@ -3,7 +3,7 @@ name = "docling-inference"
 version = "0.2.0"
 description = "Docling inference server"
 readme = "README.md"
-requires-python = "==3.11"
+requires-python = ">=3.11"
 dependencies = [
     "docling==2.31.0",
     "fastapi==0.115.6",

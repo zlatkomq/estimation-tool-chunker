@@ -9,7 +9,8 @@ RUN uv sync --frozen --no-cache --no-install-project --extra cu121
 RUN uv pip install pikepdf
 
 # Stage 2: Final image (CUDA-enabled)
-FROM nvidia/cuda:12.3.1-base-ubuntu22.04  # Changed base for CUDA support
+# Changed base for CUDA support
+FROM nvidia/cuda:12.3.1-base-ubuntu22.04
 WORKDIR /app
 
 # Install essential GPU dependencies
